@@ -476,7 +476,7 @@ if __name__ == '__main__':
     st = time.time()
     # pics_path = '/Users/finup/Desktop/rg/face_rg_server/data_pro/dc_marking_1known_ttt'
     # pics_path = '/Users/finup/Desktop/finup_face_dataset_trans_no_s'
-    pics_path = '/data/sunruina/face_server/finup_face_dataset_trans_no'
+    pics_path = '/data/sunruina/face_rg/finup_face_dataset'
 
     image_size = (112, 112)
     print('pic reading %s' % pics_path)

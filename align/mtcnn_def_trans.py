@@ -10,8 +10,7 @@ from PIL import ImageFont, ImageDraw, Image
 import math
 import os
 
-py_path = os.getcwd().replace('/align', '')  # /Users/finup/Desktop/rg/face_rg_server/align
-fontpath = py_path + "/data_pro/wryh.ttf"  # 32为字体大小
+fontpath = "/data/sunruina/face_rg/face_rg_server" + "/data_pro/wryh.ttf"  # 32为字体大小
 font22 = ImageFont.truetype(fontpath, 22)
 mark_color = (225, 209, 0)
 
@@ -417,7 +416,7 @@ print('Creating networks and loading parameters')
 gpu_config = tf.ConfigProto()
 gpu_config.allow_soft_placement = True
 gpu_config.gpu_options.allow_growth = True
-os.environ['CUDA_VISIBLE_DEVICES'] = '0'
+os.environ['CUDA_VISIBLE_DEVICES'] = '2'
 
 with tf.Graph().as_default():
     sess = tf.Session(config=gpu_config)

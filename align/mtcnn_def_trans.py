@@ -1,22 +1,21 @@
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
-import cv2
-from scipy import misc
 import tensorflow as tf
 import numpy as np
-import os
-# import align.detect_face
 import detect_face
-# from align import detect_face
 from os.path import join as pjoin
 import time
 from PIL import ImageFont, ImageDraw, Image
-# mark_color = (205, 255, 0)
-mark_color = (225, 209, 0)
 import math
+import os
 
-# http://www.sfinst.com/?p=1683
+py_path = os.getcwd().replace('/align', '')  # /Users/finup/Desktop/rg/face_rg_server/align
+fontpath = py_path + "/data_pro/wryh.ttf"  # 32为字体大小
+font22 = ImageFont.truetype(fontpath, 22)
+mark_color = (225, 209, 0)
+
+# 原理关键点 http://www.sfinst.com/?p=1683
 
 
 def to_rgb(img):
@@ -425,9 +424,7 @@ with tf.Graph().as_default():
     with sess.as_default():
         pnet, rnet, onet = detect_face.create_mtcnn(sess, None)
 
-# fontpath = "data_pro/wryh.ttf"  # 32为字体大小
-fontpath = "/Users/finup/Desktop/rg/face_rg_server/data_pro/wryh.ttf"  # 32为字体大小
-font22 = ImageFont.truetype(fontpath, 22)
+
 
 if __name__ == '__main__':
     '''单层目录'''
@@ -479,8 +476,8 @@ if __name__ == '__main__':
     '''两级目录 大量数据'''
     st = time.time()
     # pics_path = '/Users/finup/Desktop/rg/face_rg_server/data_pro/dc_marking_1known_ttt'
-    pics_path = '/Users/finup/Desktop/finup_face_dataset_trans_no_s'
-    # pics_path = '/data/sunruina/face_server/finup_face_dataset_trans_no'
+    # pics_path = '/Users/finup/Desktop/finup_face_dataset_trans_no_s'
+    pics_path = '/data/sunruina/face_server/finup_face_dataset_trans_no'
 
     image_size = (112, 112)
     print('pic reading %s' % pics_path)

@@ -107,72 +107,72 @@ if __name__ == '__main__':
     res_file = 'submission_template.csv'
 
     '''获取embs'''
-    # st = time.time()
-    # from rg_model.model_insight_auroua import InsightPreAuroua
-    #
-    # facenet_pre_m = InsightPreAuroua()
-    # imgsize = 112
-    # batch_size = 100
-    # buff_n = 1000
-    #
-    # print('pic reading %s' % pics_path)
-    # if os.path.isdir(pics_path):
-    #     pics_name = list(os.listdir(pics_path))
-    #     if '.DS_Store' in pics_name:  # 去掉不为文件夹格式的mac os系统文件
-    #         pics_name.remove('.DS_Store')
-    #     if 'all_dct.pkl' in pics_name:  # 去掉不为文件夹格式的mac os系统文件
-    #         pics_name.remove('all_dct.pkl')
-    #     if 'submission_template.csv' in pics_name:  # 去掉不为文件夹格式的mac os系统文件
-    #         pics_name.remove('submission_template.csv')
-    #     if 'submission_template.csv' in pics_name:  # 去掉不为文件夹格式的mac os系统文件
-    #         pics_name.remove('submission_template.csv')
-    #     if 'jumpjump_results.csv' in pics_name:  # 去掉不为文件夹格式的mac os系统文件
-    #         pics_name.remove('jumpjump_results.csv')
-    # else:
-    #     pics_name = [pics_path]
-    # # print(pics_name)
-    # f1000_pics, f1000_names = [], []
-    # all_people_embs = {}
-    # with open(pics_path + 'all_dct.pkl', 'wb') as f:
-    #     pickle.dump(all_people_embs, f)
-    # print('saving knows pkl...', len(all_people_embs), pics_path + 'all_dct.pkl')
-    # for pic_i in range(len(pics_name)):
-    #     if pics_name[pic_i] != '.DS_Store' and pics_name[pic_i] != 'all_dct.pkl':
-    #         # print(pics_path + pics_name[pic_i])
-    #         f_pic = cv2.resize(cv2.imread(pics_path + pics_name[pic_i]), (imgsize, imgsize))
-    #         f1000_pics.append(f_pic)
-    #         f1000_names.append(pics_name[pic_i])
-    #         if len(f1000_pics) % buff_n == 0:
-    #             f1000_pics = np.asarray(f1000_pics)
-    #             f1000_embs = facenet_pre_m.run_embds(f1000_pics, batch_size)
-    #             f1000_dict = dict(zip(f1000_names, f1000_embs))
-    #
-    #             with open(pics_path + 'all_dct.pkl', 'rb') as f:
-    #                 all_people_embs = pickle.load(f)
-    #             print('read knows pkl...', len(all_people_embs), pics_path + 'all_dct.pkl')
-    #             all_people_embs.update(f1000_dict)
-    #             with open(pics_path + 'all_dct.pkl', 'wb') as f:
-    #                 pickle.dump(all_people_embs, f)
-    #             print('save knows pkl...', len(all_people_embs), pics_path + 'all_dct.pkl')
-    #
-    #             f1000_pics, f1000_names = [], []
-    #             print('@@@ new add:', len(f1000_dict), 'finish :', pic_i + 1, '/', len(pics_name), '=',
-    #                   np.round(pic_i / len(pics_name), 3))
-    # if f1000_pics != []:
-    #     f1000_pics = np.asarray(f1000_pics)
-    #     f1000_embs = facenet_pre_m.run_embds(f1000_pics, batch_size)
-    #     f1000_dict = dict(zip(f1000_names, f1000_embs))
-    #     print('@@@ last new add:', len(f1000_dict), 'finish :', pic_i + 1, '/', len(pics_name), '=',
-    #           np.round(pic_i / len(pics_name), 3))
-    #
-    # with open(pics_path + 'all_dct.pkl', 'rb') as f:
-    #     all_people_embs = pickle.load(f)
-    # print('read knows pkl...', len(all_people_embs), pics_path + 'all_dct.pkl')
-    # all_people_embs.update(f1000_dict)
-    # with open(pics_path + 'all_dct.pkl', 'wb') as f:
-    #     pickle.dump(all_people_embs, f)
-    # print('save knows pkl...', len(all_people_embs), pics_path + 'all_dct.pkl')
-    # print('finish embs', time.time()-st)
+    st = time.time()
+    from rg_model.model_insight_auroua import InsightPreAuroua
+
+    facenet_pre_m = InsightPreAuroua()
+    imgsize = 112
+    batch_size = 100
+    buff_n = 1000
+
+    print('pic reading %s' % pics_path)
+    if os.path.isdir(pics_path):
+        pics_name = list(os.listdir(pics_path))
+        if '.DS_Store' in pics_name:  # 去掉不为文件夹格式的mac os系统文件
+            pics_name.remove('.DS_Store')
+        if 'all_dct.pkl' in pics_name:  # 去掉不为文件夹格式的mac os系统文件
+            pics_name.remove('all_dct.pkl')
+        if 'submission_template.csv' in pics_name:  # 去掉不为文件夹格式的mac os系统文件
+            pics_name.remove('submission_template.csv')
+        if 'submission_template.csv' in pics_name:  # 去掉不为文件夹格式的mac os系统文件
+            pics_name.remove('submission_template.csv')
+        if 'jumpjump_results.csv' in pics_name:  # 去掉不为文件夹格式的mac os系统文件
+            pics_name.remove('jumpjump_results.csv')
+    else:
+        pics_name = [pics_path]
+    # print(pics_name)
+    f1000_pics, f1000_names = [], []
+    all_people_embs = {}
+    with open(pics_path + 'all_dct.pkl', 'wb') as f:
+        pickle.dump(all_people_embs, f)
+    print('saving knows pkl...', len(all_people_embs), pics_path + 'all_dct.pkl')
+    for pic_i in range(len(pics_name)):
+        if pics_name[pic_i] != '.DS_Store' and pics_name[pic_i] != 'all_dct.pkl':
+            # print(pics_path + pics_name[pic_i])
+            f_pic = cv2.resize(cv2.imread(pics_path + pics_name[pic_i]), (imgsize, imgsize))
+            f1000_pics.append(f_pic)
+            f1000_names.append(pics_name[pic_i])
+            if len(f1000_pics) % buff_n == 0:
+                f1000_pics = np.asarray(f1000_pics)
+                f1000_embs = facenet_pre_m.run_embds(f1000_pics, batch_size)
+                f1000_dict = dict(zip(f1000_names, f1000_embs))
+
+                with open(pics_path + 'all_dct.pkl', 'rb') as f:
+                    all_people_embs = pickle.load(f)
+                print('read knows pkl...', len(all_people_embs), pics_path + 'all_dct.pkl')
+                all_people_embs.update(f1000_dict)
+                with open(pics_path + 'all_dct.pkl', 'wb') as f:
+                    pickle.dump(all_people_embs, f)
+                print('save knows pkl...', len(all_people_embs), pics_path + 'all_dct.pkl')
+
+                f1000_pics, f1000_names = [], []
+                print('@@@ new add:', len(f1000_dict), 'finish :', pic_i + 1, '/', len(pics_name), '=',
+                      np.round(pic_i / len(pics_name), 3))
+    if len(f1000_pics) != 0:
+        f1000_pics = np.asarray(f1000_pics)
+        f1000_embs = facenet_pre_m.run_embds(f1000_pics, batch_size)
+        f1000_dict = dict(zip(f1000_names, f1000_embs))
+        print('@@@ last new add:', len(f1000_dict), 'finish :', pic_i + 1, '/', len(pics_name), '=',
+              np.round(pic_i / len(pics_name), 3))
+
+    with open(pics_path + 'all_dct.pkl', 'rb') as f:
+        all_people_embs = pickle.load(f)
+    print('read knows pkl...', len(all_people_embs), pics_path + 'all_dct.pkl')
+    all_people_embs.update(f1000_dict)
+    with open(pics_path + 'all_dct.pkl', 'wb') as f:
+        pickle.dump(all_people_embs, f)
+    print('save knows pkl...', len(all_people_embs), pics_path + 'all_dct.pkl')
+    print('finish embs', time.time() - st)
 
     '''计算相似度'''
     st = time.time()
@@ -190,6 +190,7 @@ if __name__ == '__main__':
     print(sim_mat)
 
     import pandas as pd
+
     res = pd.read_csv(pics_path + res_file, header=None)
     res = np.asarray(res)
 
@@ -208,7 +209,6 @@ if __name__ == '__main__':
     res = pd.DataFrame(res)
     print(res[1].describe())
 
-    res.to_csv(pics_path + 'jumpjump_results.csv', header=None, index=False)
+    res.to_csv(pics_path + '1031jumpjump_results.csv', header=None, index=False)
 
-    print('finish dist', time.time()-st)
-
+    print('finish dist', time.time() - st)

@@ -78,9 +78,6 @@ class InsightPreAuroua():
         self.load_knows_pkl()
         # 外部入参配置
 
-        # ???只引入了config ，别的都没改还
-        model_path = '../facenet_files/premodel_insight_luck/config_ms1m_200_200k/best-m-200000'
-        # model_path = '/Users/finup/Desktop/rg/facenet_files/premodel_insight_luck/config_ms1m_200_200k/best-m-200000'
         self.train_mode = 0
         self.au_cfg = cfg_au
 
@@ -98,7 +95,7 @@ class InsightPreAuroua():
 
         # 配置gpu，起session，restore参数
         print('restore model para')
-
+        os.environ["CUDA_VISIBLE_DEVICES"] = "2"
         gpu_config = tf.ConfigProto()
         gpu_config.gpu_options.allow_growth = True
         self.sess = tf.Session(config=gpu_config)

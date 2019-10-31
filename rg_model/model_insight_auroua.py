@@ -72,12 +72,7 @@ def get_embd(inputs, is_training_dropout, is_training_bn, config, reuse=False, s
 
 class InsightPreAuroua():
     def __init__(self):
-
-        # load已知人脸
-        self.files_fresh, self.known_names, self.known_embs, self.known_vms = None, None, None, None
-        self.load_knows_pkl()
         # 外部入参配置
-
         self.train_mode = 0
         self.au_cfg = cfg_au
 
@@ -108,8 +103,8 @@ class InsightPreAuroua():
 
         # 实例化一次网络
         # load已知人脸
-        self.files_fresh, self.known_names, self.known_embs, self.known_vms = None, None, None, None
-        self.load_knows_pkl()
+        # self.files_fresh, self.known_names, self.known_embs, self.known_vms = None, None, None, None
+        # self.load_knows_pkl()
         # image_pre1 = cv2.imread('data_pro/sample.jpg')
         # image_pre1 = cv2.imread('/Users/finup/Desktop/rg/face_rg_server/data_pro/孙瑞娜/1c1334fd-e829-4fdf-b31b-b02bfb7ba005_trans.jpg')
         # img_crop = np.asarray([cv2.resize(image_pre1, self.au_cfg.image_size)])

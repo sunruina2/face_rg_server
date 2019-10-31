@@ -102,9 +102,9 @@ if __name__ == '__main__':
 
     # pics_path = '/Users/finup/Desktop/rg/face_rg_server/data_pro/孙瑞娜/'
     # pics_path = '/Users/finup/Desktop/rg/rg_game/data/Test_Data/'
-    pics_path = '/Users/finup/Desktop/rg/rg_game/data/Test_Data_trans/'
-
-    res_file = 'submission_template.csv'
+    file_path = '../rg_game/'
+    pics_path = file_path + 'test_data/'
+    res_file = file_path + 'submission_template.csv'
 
     '''获取embs'''
     st = time.time()
@@ -133,9 +133,9 @@ if __name__ == '__main__':
     # print(pics_name)
     f1000_pics, f1000_names = [], []
     all_people_embs = {}
-    with open(pics_path + 'all_dct.pkl', 'wb') as f:
+    with open(file_path + 'all_dct.pkl', 'wb') as f:
         pickle.dump(all_people_embs, f)
-    print('saving knows pkl...', len(all_people_embs), pics_path + 'all_dct.pkl')
+    print('saving knows pkl...', len(all_people_embs), file_path + 'all_dct.pkl')
     for pic_i in range(len(pics_name)):
         if pics_name[pic_i] != '.DS_Store' and pics_name[pic_i] != 'all_dct.pkl':
             # print(pics_path + pics_name[pic_i])
@@ -147,13 +147,13 @@ if __name__ == '__main__':
                 f1000_embs = facenet_pre_m.run_embds(f1000_pics, batch_size)
                 f1000_dict = dict(zip(f1000_names, f1000_embs))
 
-                with open(pics_path + 'all_dct.pkl', 'rb') as f:
+                with open(file_path + 'all_dct.pkl', 'rb') as f:
                     all_people_embs = pickle.load(f)
-                print('read knows pkl...', len(all_people_embs), pics_path + 'all_dct.pkl')
+                print('read knows pkl...', len(all_people_embs), file_path + 'all_dct.pkl')
                 all_people_embs.update(f1000_dict)
-                with open(pics_path + 'all_dct.pkl', 'wb') as f:
+                with open(file_path + 'all_dct.pkl', 'wb') as f:
                     pickle.dump(all_people_embs, f)
-                print('save knows pkl...', len(all_people_embs), pics_path + 'all_dct.pkl')
+                print('save knows pkl...', len(all_people_embs), file_path + 'all_dct.pkl')
 
                 f1000_pics, f1000_names = [], []
                 print('@@@ new add:', len(f1000_dict), 'finish :', pic_i + 1, '/', len(pics_name), '=',
@@ -165,20 +165,20 @@ if __name__ == '__main__':
         print('@@@ last new add:', len(f1000_dict), 'finish :', pic_i + 1, '/', len(pics_name), '=',
               np.round(pic_i / len(pics_name), 3))
 
-    with open(pics_path + 'all_dct.pkl', 'rb') as f:
+    with open(file_path + 'all_dct.pkl', 'rb') as f:
         all_people_embs = pickle.load(f)
-    print('read knows pkl...', len(all_people_embs), pics_path + 'all_dct.pkl')
+    print('read knows pkl...', len(all_people_embs), file_path + 'all_dct.pkl')
     all_people_embs.update(f1000_dict)
-    with open(pics_path + 'all_dct.pkl', 'wb') as f:
+    with open(file_path + 'all_dct.pkl', 'wb') as f:
         pickle.dump(all_people_embs, f)
-    print('save knows pkl...', len(all_people_embs), pics_path + 'all_dct.pkl')
+    print('save knows pkl...', len(all_people_embs), file_path + 'all_dct.pkl')
     print('finish embs', time.time() - st)
 
     '''计算相似度'''
     st = time.time()
-    with open(pics_path + 'all_dct.pkl', 'rb') as f:
+    with open(file_path + 'all_dct.pkl', 'rb') as f:
         all_people_embs = pickle.load(f)
-        print('read knows pkl...', len(all_people_embs), pics_path + 'all_dct.pkl')
+        print('read knows pkl...', len(all_people_embs), file_path + 'all_dct.pkl')
 
     k = np.asarray(list(all_people_embs.keys()))
     k_idx_dct = dict(zip(k, list(range(len(k)))))
@@ -191,7 +191,7 @@ if __name__ == '__main__':
 
     import pandas as pd
 
-    res = pd.read_csv(pics_path + res_file, header=None)
+    res = pd.read_csv(res_file, header=None)
     res = np.asarray(res)
 
     not_found_n = 0
@@ -209,6 +209,6 @@ if __name__ == '__main__':
     res = pd.DataFrame(res)
     print(res[1].describe())
 
-    res.to_csv(pics_path + '1031jumpjump_results.csv', header=None, index=False)
+    res.to_csv(file_path + '1031jumpjump_results.csv', header=None, index=False)
 
     print('finish dist', time.time() - st)

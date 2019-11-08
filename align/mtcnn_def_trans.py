@@ -10,9 +10,14 @@ from PIL import ImageFont, ImageDraw, Image
 import math
 import os
 
-fontpath = "/data/sunruina/face_rg/face_rg_server" + "/data_pro/wryh.ttf"  # 32为字体大小
+# fontpath = "/data/sunruina/face_rg/face_rg_server" + "/data_pro/wryh.ttf"  # 32为字体大小
+
+exe_path = os.path.abspath(__file__)
+fontpath = str(exe_path.split('face_rg_server/')[0]) + 'face_rg_server/' + "data_pro/wryh.ttf"
+print(fontpath)
 font22 = ImageFont.truetype(fontpath, 22)
 mark_color = (225, 209, 0)
+
 
 # 原理关键点 http://www.sfinst.com/?p=1683
 
@@ -128,15 +133,16 @@ def hisEqulColor1(img):
     # 将YCrCb图像通道分离
     channels = cv2.split(ycrcb)
     # 对第1个通道即亮度通道进行全局直方图均衡化并保存
-    cv2.equalizeHist(channels[0],channels[0])
+    cv2.equalizeHist(channels[0], channels[0])
     # 将处理后的通道和没有处理的两个通道合并，命名为ycrcb
-    cv2.merge(channels,ycrcb)
+    cv2.merge(channels, ycrcb)
     # 将YCrCb图像转换回RGB图像
     cv2.cvtColor(ycrcb, cv2.COLOR_YCR_CB2BGR, img)
     return img
 
 
-def load_and_align_data(image, image_size, minsize=100, trans_flag=0, threshold=[0.6, 0.7, 0.7], factor=0.709, gama_flag=0):  # 返回彩图
+def load_and_align_data(image, image_size, minsize=100, trans_flag=0, threshold=[0.6, 0.7, 0.7], factor=0.709,
+                        gama_flag=0):  # 返回彩图
     # face detection parameters
     # 以下两个阈值调整后，歪脸和遮挡会被过滤掉
 
@@ -210,17 +216,17 @@ def rotate_about_center(src, angle, scale=1.):
     h = src.shape[0]
     rangle = np.deg2rad(angle)  # angle in radians
     # now calculate new image width and height
-    nw = (abs(np.sin(rangle)*h) + abs(np.cos(rangle)*w))*scale
-    nh = (abs(np.cos(rangle)*h) + abs(np.sin(rangle)*w))*scale
+    nw = (abs(np.sin(rangle) * h) + abs(np.cos(rangle) * w)) * scale
+    nh = (abs(np.cos(rangle) * h) + abs(np.sin(rangle) * w)) * scale
     # ask OpenCV for the rotation matrix
-    rot_mat = cv2.getRotationMatrix2D((nw*0.5, nh*0.5), angle, scale)
+    rot_mat = cv2.getRotationMatrix2D((nw * 0.5, nh * 0.5), angle, scale)
     # calculate the move from the old center to the new center combined
     # with the rotation
-    rot_move = np.dot(rot_mat, np.array([(nw-w)*0.5, (nh-h)*0.5,0]))
+    rot_move = np.dot(rot_mat, np.array([(nw - w) * 0.5, (nh - h) * 0.5, 0]))
     # the move only affects the translation, so update the translation
     # part of the transform
-    rot_mat[0,2] += rot_move[0]
-    rot_mat[1,2] += rot_move[1]
+    rot_mat[0, 2] += rot_move[0]
+    rot_mat[1, 2] += rot_move[1]
     return cv2.warpAffine(src, rot_mat, (int(math.ceil(nw)), int(math.ceil(nh))), flags=cv2.INTER_LANCZOS4)
 
 
@@ -339,8 +345,8 @@ def preprocess(img, bbox=None, landmark=None, **kwargs):
             det = bbox
         margin = kwargs.get('margin', 44)
         bb = np.zeros(4, dtype=np.int32)
-        bb[0] = np.maximum(det[0] - margin / 2, 0)
-        bb[1] = np.maximum(det[1] - margin / 2, 0)
+        bb[0] = np.maximum(det[0] - margin / 2, 0)  # 左上角x
+        bb[1] = np.maximum(det[1] - margin / 2, 0)  # 左上角x
         bb[2] = np.minimum(det[2] + margin / 2, img.shape[1])
         bb[3] = np.minimum(det[3] + margin / 2, img.shape[0])
         ret = img[bb[1]:bb[3], bb[0]:bb[2], :]
@@ -422,8 +428,6 @@ with tf.Graph().as_default():
     sess = tf.Session(config=gpu_config)
     with sess.as_default():
         pnet, rnet, onet = detect_face.create_mtcnn(sess, None)
-
-
 
 if __name__ == '__main__':
     '''单层目录'''
@@ -524,7 +528,8 @@ if __name__ == '__main__':
                     mtcnn_1 += 1
                 else:
                     # 自适应直方图均衡化
-                    dets, crop_images, point5, j = load_and_align_data(f_pic, 112, trans_flag=1, minsize=90, gama_flag=1)
+                    dets, crop_images, point5, j = load_and_align_data(f_pic, 112, trans_flag=1, minsize=90,
+                                                                       gama_flag=1)
                     if len(crop_images) != 0:
                         to_picpath = peo_pkg + peo_pics[i]
                         cv2.imwrite(to_picpath, crop_images[0])

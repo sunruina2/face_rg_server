@@ -132,12 +132,12 @@ class Network(object):
 
     @layer
     def conv(self,
-             inp,# pic
-             k_h,# kernel_h
-             k_w,# kernel_w
-             c_o,# channel_out
-             s_h,# stride_h
-             s_w,# stride_w
+             inp,  # pic
+             k_h,  # kernel_h
+             k_w,  # kernel_w
+             c_o,  # channel_out
+             s_h,  # stride_h
+             s_w,  # stride_w
              name,
              relu=True,
              padding='SAME',
@@ -313,7 +313,7 @@ def detect_face(img, minsize, pnet, rnet, onet, threshold, factor):
     """
     # !!!  https://www.cnblogs.com/the-home-of-123/p/9857056.html 代码注释 others
     factor_count = 0
-    total_boxes = np.empty((0, 9)) # (2>q1+2>q2+1>score+4>reg)>>9
+    total_boxes = np.empty((0, 9))  # (2>q1+2>q2+1>score+4>reg)>>9
     points = np.empty(0)
     h = img.shape[0]
     w = img.shape[1]
@@ -324,7 +324,7 @@ def detect_face(img, minsize, pnet, rnet, onet, threshold, factor):
     minl = minl * m
     # create scale pyramid 金字塔每一级缩小百分比，第一级是 12/minsize(20) = 0.6>>新的原图，第二级是 新的原图0.6 * 0.704^2，第三级是 新的原图0.6 * 0.704^3
     # 一直缩小缩小金字塔层图，直到缩小到短边的边长(像素点个数), 大于感受野的边长12为止。
-    scales = [] # 存储每层缩小的比率(缩小过程中固定长宽比)
+    scales = []  # 存储每层缩小的比率(缩小过程中固定长宽比)
     while minl >= 12:
         scales += [m * np.power(factor, factor_count)]
         minl = minl * factor
@@ -334,11 +334,11 @@ def detect_face(img, minsize, pnet, rnet, onet, threshold, factor):
     for scale in scales:
         hs = int(np.ceil(h * scale))
         ws = int(np.ceil(w * scale))
-        im_data = imresample(img, (hs, ws)) # 下采样图片缩小
-        im_data = (im_data - 127.5) / 128.0 # 图片归一化，255/2 ，归一化到 [-1，1]，收敛更快
-        img_x = np.expand_dims(im_data, 0) # array 多套一层括号
-        img_y = np.transpose(img_x, (0, 2, 1, 3)) #
-        out = pnet(img_y) # pnet的输出结果
+        im_data = imresample(img, (hs, ws))  # 下采样图片缩小
+        im_data = (im_data - 127.5) / 128.0  # 图片归一化，255/2 ，归一化到 [-1，1]，收敛更快
+        img_x = np.expand_dims(im_data, 0)  # array 多套一层括号
+        img_y = np.transpose(img_x, (0, 2, 1, 3))  #
+        out = pnet(img_y)  # pnet的输出结果
         out0 = np.transpose(out[0], (0, 2, 1, 3))
         out1 = np.transpose(out[1], (0, 2, 1, 3))
         # out0 是边框偏度(tx,ty,tw,th)，out1 是是否有人脸
@@ -348,30 +348,34 @@ def detect_face(img, minsize, pnet, rnet, onet, threshold, factor):
         pick = nms(boxes.copy(), 0.5, 'Union')
         if boxes.size > 0 and pick.size > 0:
             boxes = boxes[pick, :]
-            total_boxes = np.append(total_boxes, boxes, axis=0) # 每种规模都会找出一些box，每种规模找出的满足阈值条件的box个数会有不同多个，不管是何种规模，都append到一起作为候选框 ，存放在 total里 [n_boxs, 9]
+            total_boxes = np.append(total_boxes, boxes,
+                                    axis=0)  # 每种规模都会找出一些box，每种规模找出的满足阈值条件的box个数会有不同多个，不管是何种规模，都append到一起作为候选框 ，存放在 total里 [n_boxs, 9]
 
     numbox = total_boxes.shape[0]
     if numbox > 0:
-        pick = nms(total_boxes.copy(), 0.7, 'Union') # ###提高阈值，进一步进行nms
-        total_boxes = total_boxes[pick, :]  # q1和q2是原始图片的左上右下坐标 (2：q1+2：q2+1：score+4：reg) >> [x1,y1,x2,y2,score,tx1,ty1,tx2,ty2] >> 9
+        pick = nms(total_boxes.copy(), 0.7, 'Union')  # ###提高阈值，进一步进行nms
+        total_boxes = total_boxes[pick,
+                      :]  # q1和q2是原始图片的左上右下坐标 (2：q1+2：q2+1：score+4：reg) >> [x1,y1,x2,y2,score,tx1,ty1,tx2,ty2] >> 9
         regw = total_boxes[:, 2] - total_boxes[:, 0]
         regh = total_boxes[:, 3] - total_boxes[:, 1]
         qq1 = total_boxes[:, 0] + total_boxes[:, 5] * regw  # 先做平移，在左上角原始坐标上，放缩tx倍的w宽度，得到原始图片上的坐标位置
         qq2 = total_boxes[:, 1] + total_boxes[:, 6] * regh  # 先做平移，在左上角原始坐标上，放缩ty倍的h高度，得到原始图片上的坐标位置
         qq3 = total_boxes[:, 2] + total_boxes[:, 7] * regw  # 先做平移，在右下角原始坐标上，放缩tx倍的w宽度，得到原始图片上的坐标位置
         qq4 = total_boxes[:, 3] + total_boxes[:, 8] * regh  # 先做平移，在右下角原始坐标上，放缩ty倍的h高度，得到原始图片上的坐标位置
-        total_boxes = np.transpose(np.vstack([qq1, qq2, qq3, qq4, total_boxes[:, 4]])) # 依次为平移后的左上角，右下角坐标及该部分得分 [n_boxs, 5]
-        total_boxes = rerec(total_boxes.copy()) #平移左上角和右下角后，进行延伸，变成正方型
-        total_boxes[:, 0:4] = np.fix(total_boxes[:, 0:4]).astype(np.int32) # 修正后的坐标'向上取整，得到新的坐标点
-        dy, edy, dx, edx, y, ey, x, ex, tmpw, tmph = pad(total_boxes.copy(), w, h) # 对坐标进行修剪，使其不超出图片大小，返回[新bbox平移???], [新box下标] ,[bbox旧宽度，bbox旧高度]
+        total_boxes = np.transpose(
+            np.vstack([qq1, qq2, qq3, qq4, total_boxes[:, 4]]))  # 依次为平移后的左上角，右下角坐标及该部分得分 [n_boxs, 5]
+        total_boxes = rerec(total_boxes.copy())  # 平移左上角和右下角后，进行延伸，变成正方型
+        total_boxes[:, 0:4] = np.fix(total_boxes[:, 0:4]).astype(np.int32)  # 修正后的坐标'向上取整，得到新的坐标点
+        dy, edy, dx, edx, y, ey, x, ex, tmpw, tmph = pad(total_boxes.copy(), w,
+                                                         h)  # 对坐标进行修剪，使其不超出图片大小，返回[新bbox平移???], [新box下标] ,[bbox旧宽度，bbox旧高度]
 
     numbox = total_boxes.shape[0]
     if numbox > 0:
         # second stage
-        tempimg = np.zeros((24, 24, 3, numbox)) # pnet的输出，先进行剪裁再下采样之后，存储在矩阵24*24*3*numbox中，用于输入到rnet
+        tempimg = np.zeros((24, 24, 3, numbox))  # pnet的输出，先进行剪裁再下采样之后，存储在矩阵24*24*3*numbox中，用于输入到rnet
         for k in range(0, numbox):
             tmp = np.zeros((int(tmph[k]), int(tmpw[k]), 3))  # 候选框第一个图片
-            tmp[dy[k] - 1:edy[k], dx[k] - 1:edx[k], :] = img[y[k] - 1:ey[k], x[k] - 1:ex[k], :]  #剪裁？？？
+            tmp[dy[k] - 1:edy[k], dx[k] - 1:edx[k], :] = img[y[k] - 1:ey[k], x[k] - 1:ex[k], :]  # 剪裁？？？
             if tmp.shape[0] > 0 and tmp.shape[1] > 0 or tmp.shape[0] == 0 and tmp.shape[1] == 0:
                 tempimg[:, :, :, k] = imresample(tmp, (24, 24))  # 下采样
             else:
@@ -379,11 +383,12 @@ def detect_face(img, minsize, pnet, rnet, onet, threshold, factor):
         tempimg = (tempimg - 127.5) / 128.0
         tempimg1 = np.transpose(tempimg, (3, 1, 0, 2))
         out = rnet(tempimg1)
-        out0 = np.transpose(out[0]) # 回归预测框坐标偏置
-        out1 = np.transpose(out[1]) # 预测得分
+        out0 = np.transpose(out[0])  # 回归预测框坐标偏置
+        out1 = np.transpose(out[1])  # 预测得分
         score = out1[1, :]
         ipass = np.where(score > threshold[1])  # 筛选人脸高概率的像素点
-        total_boxes = np.hstack([total_boxes[ipass[0], 0:4].copy(), np.expand_dims(score[ipass].copy(), 1)])   # 筛选人脸高概率的像素点对应的边框
+        total_boxes = np.hstack(
+            [total_boxes[ipass[0], 0:4].copy(), np.expand_dims(score[ipass].copy(), 1)])  # 筛选人脸高概率的像素点对应的边框
         mv = out0[:, ipass[0]]  # 筛选人脸高概率的像素点对应的边框偏置
         if total_boxes.shape[0] > 0:
             pick = nms(total_boxes, 0.7, 'Union')  # 对rnet的结果进行nms筛选
@@ -395,7 +400,8 @@ def detect_face(img, minsize, pnet, rnet, onet, threshold, factor):
     if numbox > 0:
         # third stage
         total_boxes = np.fix(total_boxes).astype(np.int32)  # 将rnet的输出结果进行向下取整，得到候选框，[x1,y1,x2,y2,score]
-        dy, edy, dx, edx, y, ey, x, ex, tmpw, tmph = pad(total_boxes.copy(), w, h)  # 原始bbox窗大小 (956,956,3)，但是x1=-1，超出了原始图片的下界0，
+        dy, edy, dx, edx, y, ey, x, ex, tmpw, tmph = pad(total_boxes.copy(), w,
+                                                         h)  # 原始bbox窗大小 (956,956,3)，但是x1=-1，超出了原始图片的下界0，
         tempimg = np.zeros((48, 48, 3, numbox))
         for k in range(0, numbox):
             tmp = np.zeros((int(tmph[k]), int(tmpw[k]), 3))  # 原始bbox窗大小 (956,956,3)，但是x1=-1，超出了原始图片的下界0，
@@ -413,16 +419,20 @@ def detect_face(img, minsize, pnet, rnet, onet, threshold, factor):
         score = out2[1, :]
         points = out1
         ipass = np.where(score > threshold[2])
-        points = points[:, ipass[0]]  # 5点的x和y坐标的偏置系数 顺序>> [x左眼，x右眼，x鼻子，x左嘴角，x右嘴角; y左眼，y右眼，y鼻子，y左嘴角，y右嘴角]，“point[01234] * w”为 box坐标系中的点x坐标值，，“point[56789] * h”为 box坐标系中的5点y坐标值
-        total_boxes = np.hstack([total_boxes[ipass[0], 0:4].copy(), np.expand_dims(score[ipass].copy(), 1)])  # 最终的高概率像素点对应的候选框--在原始图片上的坐标x1y1x2y2
+        points = points[:, ipass[
+                               0]]  # 5点的x和y坐标的偏置系数 顺序>> [x左眼，x右眼，x鼻子，x左嘴角，x右嘴角; y左眼，y右眼，y鼻子，y左嘴角，y右嘴角]，“point[01234] * w”为 box坐标系中的点x坐标值，，“point[56789] * h”为 box坐标系中的5点y坐标值
+        total_boxes = np.hstack([total_boxes[ipass[0], 0:4].copy(),
+                                 np.expand_dims(score[ipass].copy(), 1)])  # 最终的高概率像素点对应的候选框--在原始图片上的坐标x1y1x2y2
         mv = out0[:, ipass[0]]  # 最终的高概率像素点对应的待修正偏移量
 
         w = total_boxes[:, 2] - total_boxes[:, 0] + 1
         h = total_boxes[:, 3] - total_boxes[:, 1] + 1
-        points[0:5, :] = np.tile(w, (5, 1)) * points[0:5, :] + np.tile(total_boxes[:, 0], (5, 1)) - 1  # 在原有box上五点mark5点的x坐标进行修正=“point[01234] * w”为 box坐标系中的点x坐标值 + 原始图片上box所在位置左上角x1的坐标值”，从而得到原始图片坐标系上5点的x坐标值
-        points[5:10, :] = np.tile(h, (5, 1)) * points[5:10, :] + np.tile(total_boxes[:, 1], (5, 1)) - 1  # 同上一行，x变成y就可以了；新的points里面存的是原始图片坐标系下 landmark坐标信息 [x左眼，x右眼，x鼻子，x左嘴角，x右嘴角; y左眼，y右眼，y鼻子，y左嘴角，y右嘴角]
+        points[0:5, :] = np.tile(w, (5, 1)) * points[0:5, :] + np.tile(total_boxes[:, 0], (5,
+                                                                                           1)) - 1  # 在原有box上五点mark5点的x坐标进行修正=“point[01234] * w”为 box坐标系中的点x坐标值 + 原始图片上box所在位置左上角x1的坐标值”，从而得到原始图片坐标系上5点的x坐标值
+        points[5:10, :] = np.tile(h, (5, 1)) * points[5:10, :] + np.tile(total_boxes[:, 1], (
+        5, 1)) - 1  # 同上一行，x变成y就可以了；新的points里面存的是原始图片坐标系下 landmark坐标信息 [x左眼，x右眼，x鼻子，x左嘴角，x右嘴角; y左眼，y右眼，y鼻子，y左嘴角，y右嘴角]
         if total_boxes.shape[0] > 0:
-            total_boxes = bbreg(total_boxes.copy(), np.transpose(mv)) # 用onet的4坐标值偏置修正边框
+            total_boxes = bbreg(total_boxes.copy(), np.transpose(mv))  # 用onet的4坐标值偏置修正边框
             pick = nms(total_boxes.copy(), 0.7, 'Min')
             total_boxes = total_boxes[pick, :]
             points = points[:, pick]
@@ -482,7 +492,7 @@ def bulk_detect_face(images, detection_window_size_ratio, pnet, rnet, onet, thre
                 images_obj_per_resolution[(ws, hs)] = []
 
             im_data = imresample(images[index], (hs, ws))
-            im_data = (im_data - 127.5)/ 128.0
+            im_data = (im_data - 127.5) / 128.0
             img_y = np.transpose(im_data, (1, 0, 2))  # caffe uses different dimensions ordering
             images_obj_per_resolution[(ws, hs)].append({'scale': scale, 'image': img_y, 'index': index})
 
@@ -536,7 +546,7 @@ def bulk_detect_face(images, detection_window_size_ratio, pnet, rnet, onet, thre
                     else:
                         return np.empty()
 
-                tempimg = (tempimg - 127.5)/ 128.0
+                tempimg = (tempimg - 127.5) / 128.0
                 image_obj['rnet_input'] = np.transpose(tempimg, (3, 1, 0, 2))
 
     # # # # # # # # # # # # #
@@ -590,7 +600,7 @@ def bulk_detect_face(images, detection_window_size_ratio, pnet, rnet, onet, thre
                         tempimg[:, :, :, k] = imresample(tmp, (48, 48))
                     else:
                         return np.empty()
-                tempimg = (tempimg - 127.5)/ 128.0
+                tempimg = (tempimg - 127.5) / 128.0
                 image_obj['onet_input'] = np.transpose(tempimg, (3, 1, 0, 2))
 
         i += rnet_input_count
@@ -679,11 +689,11 @@ def generateBoundingBox(imap, reg, scale, t):
     cellsize = 12
     # (x1, y1),(x2, y2)分别是输入矩阵中一个矩形区域的左上角和右下角坐标
     imap = np.transpose(imap)
-    dx1 = np.transpose(reg[:, :, 0]) # 每个像素点是tx
-    dy1 = np.transpose(reg[:, :, 1]) # 每个像素点是ty
-    dx2 = np.transpose(reg[:, :, 2]) # 每个像素点是tw
-    dy2 = np.transpose(reg[:, :, 3]) # 每个像素点是th
-    y, x = np.where(imap >= t) # x,y 为概率大于0.6的像素的的imap矩阵下标,值都为整数
+    dx1 = np.transpose(reg[:, :, 0])  # 每个像素点是tx
+    dy1 = np.transpose(reg[:, :, 1])  # 每个像素点是ty
+    dx2 = np.transpose(reg[:, :, 2])  # 每个像素点是tw
+    dy2 = np.transpose(reg[:, :, 3])  # 每个像素点是th
+    y, x = np.where(imap >= t)  # x,y 为概率大于0.6的像素的的imap矩阵下标,值都为整数
     # 每个像素点概率t > cut_point,筛选出人脸可能性大的像素点 例如：可能有25个 (x,y) 点
     if y.shape[0] == 1:
         # 如果只有1个人头，则np.flipud 对矩阵沿着水平轴上下翻转? 干啥呢？
@@ -693,13 +703,15 @@ def generateBoundingBox(imap, reg, scale, t):
         dy2 = np.flipud(dy2)
     # 取满足pnet阈值的像素点的概率分数和对应像素点的bbox四个点的偏移量
     score = imap[(y, x)]
-    reg = np.transpose(np.vstack([dx1[(y, x)], dy1[(y, x)], dx2[(y, x)], dy2[(y, x)]])) # 筛选概率大的像素点位置，所对应的x1y1x2y2的概率值取出，例25个框子，每个框子四个坐标点(y,x)
+    reg = np.transpose(np.vstack(
+        [dx1[(y, x)], dy1[(y, x)], dx2[(y, x)], dy2[(y, x)]]))  # 筛选概率大的像素点位置，所对应的x1y1x2y2的概率值取出，例25个框子，每个框子四个坐标点(y,x)
     if reg.size == 0:
         reg = np.empty((0, 3))  # 如果没找到人脸，reg候选框list改为空
     bb = np.transpose(np.vstack([y, x]))  # np.vstack是按照行顺序，把数组给堆叠起来，横着拼在一起，变成25个坐标二元组
-    q1 = np.fix((stride * bb + 1) / scale) # q1,q2值应为在原图中每一个预测框的左上角，右下角坐标，np.fix向下取整
+    q1 = np.fix((stride * bb + 1) / scale)  # q1,q2值应为在原图中每一个预测框的左上角，右下角坐标，np.fix向下取整
     q2 = np.fix((stride * bb + cellsize - 1 + 1) / scale)
-    boundingbox = np.hstack([q1, q2, np.expand_dims(score, 1), reg]) # 一个像素点有9个值，合并hstack到一个list里面，boundingbox.shape=(25, 9) (2>q1+2>q2+1>score+4>reg)>>9
+    boundingbox = np.hstack([q1, q2, np.expand_dims(score, 1),
+                             reg])  # 一个像素点有9个值，合并hstack到一个list里面，boundingbox.shape=(25, 9) (2>q1+2>q2+1>score+4>reg)>>9
     return boundingbox, reg  # 返回每一个12*12块大小的坐标及对应偏移及该块得分
 
 
@@ -716,8 +728,8 @@ def nms(boxes, threshold, method):
     x2 = boxes[:, 2]  # q2[0] (2>q1+2>q2+1>score+4>reg)>>9 = 0~8
     y2 = boxes[:, 3]  # q2[1] (2>q1+2>q2+1>score+4>reg)>>9 = 0~8
     s = boxes[:, 4]  # score (2>q1+2>q2+1>score+4>reg)>>9 = 0~8
-    area = (x2 - x1 + 1) * (y2 - y1 + 1) # 面积都是400左右？ 20*20
-    I = np.argsort(s) # 产出每个像素点得分排位的rankid 0~24
+    area = (x2 - x1 + 1) * (y2 - y1 + 1)  # 面积都是400左右？ 20*20
+    I = np.argsort(s)  # 产出每个像素点得分排位的rankid 0~24
     pick = np.zeros_like(s, dtype=np.int16)
     counter = 0
     while I.size > 0:
@@ -745,13 +757,13 @@ def nms(boxes, threshold, method):
 def pad(total_boxes, w, h):
     """Compute the padding coordinates (pad the bounding boxes to square)"""
     tmpw = (total_boxes[:, 2] - total_boxes[:, 0] + 1).astype(np.int32)  # x2 - x1 = w
-    tmph = (total_boxes[:, 3] - total_boxes[:, 1] + 1).astype(np.int32)  # y2 - y1 = w
+    tmph = (total_boxes[:, 3] - total_boxes[:, 1] + 1).astype(np.int32)  # y2 - y1 = h
     numbox = total_boxes.shape[0]
 
-    dx = np.ones((numbox), dtype=np.int32) # 94个1，新box位置x1初始化
-    dy = np.ones((numbox), dtype=np.int32) # 94个1，新box位置y1初始化
-    edx = tmpw.copy().astype(np.int32) # 94个宽，新box位置x2初始化
-    edy = tmph.copy().astype(np.int32) # 94个高，新box位置y2初始化
+    dx = np.ones((numbox), dtype=np.int32)  # 94个1，新box位置x1初始化
+    dy = np.ones((numbox), dtype=np.int32)  # 94个1，新box位置y1初始化
+    edx = tmpw.copy().astype(np.int32)  # 94个宽，新box位置x2初始化
+    edy = tmph.copy().astype(np.int32)  # 94个高，新box位置y2初始化
     # 上边的四个变量“dbox”是用于存放从原始图片抠出来的新box，备注如果回归结果box越界了原始图片，则会取回归结果box和原始图片的交集作为新的box，从而新box的面积会小于等于回归结果box
     x = total_boxes[:, 0].copy().astype(np.int32)  # 94个x1，原始图片上box的位置
     y = total_boxes[:, 1].copy().astype(np.int32)  # 94个y1，原始图片上box的位置
@@ -780,12 +792,12 @@ def pad(total_boxes, w, h):
 # function [bboxA] = rerec(bboxA)
 def rerec(bboxA):
     """Convert bboxA to square."""
-    h = bboxA[:, 3] - bboxA[:, 1] # y2-y1
-    w = bboxA[:, 2] - bboxA[:, 0] # x2-x1
-    l = np.maximum(w, h) # 取长边
-    bboxA[:, 0] = bboxA[:, 0] + w * 0.5 - l * 0.5 # x1 向右移动一半宽度w，向左移动长边的长度l
-    bboxA[:, 1] = bboxA[:, 1] + h * 0.5 - l * 0.5 # y1 向下移动一半高度h，向上移动长边的长度l，以上两步使得，短边移动 0.5(l-短边)，使得延申是往短边外的两侧各延伸一半
-    bboxA[:, 2:4] = bboxA[:, 0:2] + np.transpose(np.tile(l, (2, 1))) # 在新的左上角点上，向右走l步，向下走l步，形成正方形
+    h = bboxA[:, 3] - bboxA[:, 1]  # y2-y1
+    w = bboxA[:, 2] - bboxA[:, 0]  # x2-x1
+    l = np.maximum(w, h)  # 取长边
+    bboxA[:, 0] = bboxA[:, 0] + w * 0.5 - l * 0.5  # x1 向右移动一半宽度w，向左移动长边的长度l
+    bboxA[:, 1] = bboxA[:, 1] + h * 0.5 - l * 0.5  # y1 向下移动一半高度h，向上移动长边的长度l，以上两步使得，短边移动 0.5(l-短边)，使得延申是往短边外的两侧各延伸一半
+    bboxA[:, 2:4] = bboxA[:, 0:2] + np.transpose(np.tile(l, (2, 1)))  # 在新的左上角点上，向右走l步，向下走l步，形成正方形
     return bboxA
 
 

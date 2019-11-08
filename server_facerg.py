@@ -7,9 +7,6 @@ from align import mtcnn_def_trans as fc_server
 import time
 import pickle
 
-# from rg_model.model_insight_tiny import InsightPreTiny
-# facenet_pre_m = InsightPreTiny()
-
 # from rg_model.model_facenet import FacenetPre
 # facenet_pre_m = FacenetPre()
 # lastsave_embs0 = np.zeros(128)
@@ -28,11 +25,12 @@ facenet_pre_m = InsightPreAuroua()
 lastsave_embs0 = np.zeros(512)
 imgsize = 112
 trans_01 = 0
-# facenet_pre_m.gen_knowns_db('../facenet_files/office_face160/', '../facenet_files/embs_pkl/insight_luck/')
+pic_path = '/Users/finup/Desktop/rg/ver_data/dc_marking_trans_avg_k/'
+pkl_path = '../face_rg_files/embs_pkl/ep_insight_auroua/50w_assian.pkl'
+facenet_pre_m.gen_knowns_db(pic_path, pkl_path)
 
-fr = open('../facenet_files/pickle_files/officeid_name_dct.pkl', 'rb')
+fr = open('../face_rg_files/common_files/officeid_name_dct.pkl', 'rb')
 officeid_name_dct = pickle.load(fr)
-
 names = []
 faceembs = []
 f_areas_r_lst = []
@@ -82,7 +80,7 @@ def rg_mark_frame(f_pic):
     # print('TIME rg: ********************************************** Start', np.round((now_exetime_rg - last_exetime_rg), 4))
     # last_exetime_rg = now_exetime_rg
 
-    dets, crop_images, point5, j = fc_server.load_and_align_data(f_pic, trans_flag=trans_01,image_size=imgsize,
+    dets, crop_images, point5, j = fc_server.load_and_align_data(f_pic, trans_flag=trans_01, image_size=imgsize,
                                                                  minsize=mtcnn_minsize)  # 获取人脸, 由于frame色彩空间rgb不对应问题，需统一转为灰色图片
 
     # now_exetime_rg = time.time()
@@ -281,8 +279,9 @@ def add():
                                                       values=np.asarray(
                                                           time_stamp + '-' + request.form['cars'] + '@' + user_new),
                                                       axis=0)
-                cv2.imwrite("../facenet_files/photos/" + time_stamp + '-' + request.form['cars'] + '@' + user_new + '.jpg',
-                            new_photo)
+                cv2.imwrite(
+                    "../facenet_files/photos/" + time_stamp + '-' + request.form['cars'] + '@' + user_new + '.jpg',
+                    new_photo)
             else:
                 print('工号未知的新员工:', int(userid_new))
 

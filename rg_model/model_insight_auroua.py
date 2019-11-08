@@ -13,6 +13,9 @@ from config_file import auroua_config_mgpu as cfg_au
 from rg_net.net_insight_auroua_issue9 import get_resnet
 import tensorlayer as tl
 from data_pro.data_utils import load_image, data_iter
+import numpy as np
+import matplotlib.pyplot as plt
+from sklearn.metrics import roc_curve, auc, confusion_matrix, roc_auc_score, classification_report
 
 
 def get_embd(inputs, is_training_dropout, is_training_bn, config, reuse=False, scope='embd_extractor'):
@@ -72,7 +75,9 @@ def get_embd(inputs, is_training_dropout, is_training_bn, config, reuse=False, s
 
 class InsightPreAuroua():
     def __init__(self):
+
         # 外部入参配置
+
         self.train_mode = 0
         self.au_cfg = cfg_au
 
@@ -90,26 +95,27 @@ class InsightPreAuroua():
 
         # 配置gpu，起session，restore参数
         print('restore model para')
-        os.environ["CUDA_VISIBLE_DEVICES"] = "2"
         gpu_config = tf.ConfigProto()
         gpu_config.gpu_options.allow_growth = True
         self.sess = tf.Session(config=gpu_config)
-        saver = tf.train.Saver()
         self.feed_dict_test = {}
         print('ckpt file %s restored!' % self.au_cfg.premodel_path)
+        saver = tf.train.Saver()
         saver.restore(self.sess, self.au_cfg.premodel_path)
         self.feed_dict_test.update(tl.utils.dict_to_one(self.net.all_drop))
         self.feed_dict_test[self.dropout_rate] = 1.0
 
         # 实例化一次网络
         # load已知人脸
-        # self.files_fresh, self.known_names, self.known_embs, self.known_vms = None, None, None, None
-        # self.load_knows_pkl()
-        # image_pre1 = cv2.imread('data_pro/sample.jpg')
-        # image_pre1 = cv2.imread('/Users/finup/Desktop/rg/face_rg_server/data_pro/孙瑞娜/1c1334fd-e829-4fdf-b31b-b02bfb7ba005_trans.jpg')
-        # img_crop = np.asarray([cv2.resize(image_pre1, self.au_cfg.image_size)])
-        # face_names, is_knowns, face_embs, sim_pro_lst = self.imgs_get_names(img_crop)
-        # print('init done')
+        self.files_fresh, self.known_names, self.known_embs, self.known_vms = None, None, None, None
+        self.load_knows_pkl()
+
+        exe_path = os.path.abspath(__file__)
+        fontpath = str(exe_path.split('face_rg_server/')[0]) + 'face_rg_server/' + "data_pro/pre_img.jpg"
+        image_pre1 = cv2.imread(fontpath)
+        img_crop = np.asarray([cv2.resize(image_pre1, self.au_cfg.image_size)])
+        face_names, is_knowns, face_embs, sim_pro_lst = self.imgs_get_names(img_crop)
+        print('init done')
 
     def run_embds(self, crop_images, batch_size=1):
         all_embeddings = None
@@ -243,10 +249,10 @@ class InsightPreAuroua():
         #     cos_sim.append(dis)
         # cos_sim = np.asarray(cos_sim)
 
-        print(cos_sim)
+        # print(cos_sim)
         is_known = 0
         sim_p = max(cos_sim)
-        if sim_p >= 0.75:  # 越大越严格
+        if sim_p >= 0.65:  # 越大越严格
             loc_similar_most = np.where(cos_sim == sim_p)
             print(loc_similar_most)
             is_known = 1
@@ -264,7 +270,7 @@ class InsightPreAuroua():
 
         # 获取embs
         print('forward running...')
-        embds_arr = self.run_embds(imgs_pic, 64)
+        embds_arr = self.run_embds(imgs_pic, 128)
         embds_dict = dict(zip(fns, list(embds_arr)))
 
         if len(embds_arr) != 0:
@@ -294,7 +300,7 @@ class InsightPreAuroua():
 
         return face_names, is_knowns, face_embs, sim_pro_lst
 
-    def verify_db(self, konwn_path, unkonwn_path):
+    def verify_db(self, konwn_path, unkonwn_path, print_flag=0):
 
         fr = open(konwn_path, 'rb')
         k_names_embs = pickle.load(fr)
@@ -327,37 +333,86 @@ class InsightPreAuroua():
         uk_all_label = np.ravel(uk_all_label)
         print(uk_all_sim.shape, uk_all_label.shape)
 
-        from sklearn.metrics import confusion_matrix, roc_auc_score, classification_report
-
-        auc = np.round(roc_auc_score(uk_all_label, uk_all_sim, average='micro'), 4)
-        print('AUC 为:', auc)
+        auc_v = np.round(roc_auc_score(uk_all_label, uk_all_sim, average='micro'), 4)
+        print('AUC 为:', auc_v)
         print('\n')
+        if print_flag == 1:
+            for hold_v in [0.55, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9, 0.95, 0.99]:
+                uk_all_sim_01 = [i >= hold_v for i in uk_all_sim]
 
-        for hold_v in [0.55, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9, 0.95, 0.99]:
-            uk_all_sim_01 = [i >= hold_v for i in uk_all_sim]
+                # report = classification_report(uk_all_label, uk_all_sim_01)
+                # print(report)
+                matrix = confusion_matrix(uk_all_label, uk_all_sim_01)
+                print('hold_v >=', hold_v)
+                print(matrix[0][0])
+                print(matrix[0][1])
+                print(matrix[1][0])
+                print(matrix[1][1])
+                print('\n\n')
 
-            # report = classification_report(uk_all_label, uk_all_sim_01)
-            # print(report)
-            matrix = confusion_matrix(uk_all_label, uk_all_sim_01)
-            print('hold_v >=', hold_v)
-            print(matrix[0][0])
-            print(matrix[0][1])
-            print(matrix[1][0])
-            print(matrix[1][1])
-            print('\n\n')
+        # Compute ROC curve and ROC area for each class
+        fpr, tpr, threshold = roc_curve(uk_all_label, uk_all_sim)  ###计算真正率和假正率
+
+        return fpr, tpr, threshold
 
 
 global_pkl_path = '/Users/finup/Desktop/rg/face_rg_files/embs_pkl/ep_insight_auroua/*'
 
-if __name__ == "__main__":
-    insight_c = InsightPreAuroua()
-
-    time_stamp_pkl = time.strftime("%Y%m%d%H%M%S", time.localtime())
-    insight_c.gen_knowns_db('/Users/finup/Desktop/rg/face_rg_files/common_files/dc_marking_1known_trans',
-                            '/Users/finup/Desktop/rg/face_rg_files/embs_pkl/ep_facenet/' + time_stamp_pkl + '_facenet-known.pkl')
-    insight_c.gen_knowns_db('/Users/finup/Desktop/rg/face_rg_files/common_files/dc_marking_trans',
-                            '/Users/finup/Desktop/rg/face_rg_files/embs_pkl/ep_facenet/' + time_stamp_pkl + '_facenet-unknown.pkl')
-
-    konwn_path = '/Users/finup/Desktop/rg/face_rg_files/embs_pkl/ep_facenet/' + time_stamp_pkl + '_facenet-known.pkl'
-    unkonwn_path = '/Users/finup/Desktop/rg/face_rg_files/embs_pkl/ep_facenet/' + time_stamp_pkl + '_facenet-unknown.pkl'
-    insight_c.verify_db(konwn_path, unkonwn_path)
+# if __name__ == "__main__":
+#     '''产生k&uk的embs'''
+#     insight_c = InsightPreAuroua()
+#     root_path = '/Users/finup/Desktop/rg/ver_data/'
+#     pk_file = root_path + 'dc_marking_trans_avg_k/'
+#     pu_file = root_path + 'dc_marking_trans_avg_uk/'
+#     pkl_pkg = '/Users/finup/Desktop/rg/face_rg_files/embs_pkl/ep_insight_auroua/'
+#
+#     # ckpt_pt = '/Users/finup/Desktop/rg/face_rg_files/premodels/pm_insight_auroua/1107_auroua_out_office_avg/mgpu_res/ckpt/InsightFace_iter_'
+#     # p_dct = {'50w29': '500150-29', '50w39': '500200-39', '50w49': '500250-49', '50w59': '500300-59',
+#     #          '50w69': '500350-69', '50w79': '500400-79', '50w89': '500450-89', '50w99': '500500-99',
+#     #          '50w109': '500550-109', '50w119': '500600-119'}
+#     ckpt_pt = '/Users/finup/Desktop/rg/face_rg_files/premodels/pm_insight_auroua/1030_auroua_out/mgpu_res/ckpt/InsightFace_iter_'
+#     p_dct = {'50w': '500000'}
+#     for k, v in p_dct.items():
+#         saver = tf.train.Saver()
+#         saver.restore(insight_c.sess, ckpt_pt + v + '.ckpt')
+#         k_pkl = pkl_pkg + k + '_office_aurora_asian_finetune_avg_k.pkl'
+#         u_pkl = pkl_pkg + k + '_office_aurora_asian_finetune_avg_uk.pkl'
+#         insight_c.gen_knowns_db(pk_file, k_pkl)
+#         insight_c.gen_knowns_db(pu_file, u_pkl)
+#
+#     '''评估'''
+#     pkl_pkg = '/Users/finup/Desktop/rg/face_rg_files/embs_pkl/ep_insight_auroua/'
+#     roc_fig = '/Users/finup/Desktop/rg/face_rg_server/data_pro/aurora_asian_finetune_roc.jpg'
+#     plt.figure()
+#     lw = 2
+#     plt.figure(figsize=(12, 20))
+#     colors = ['black', 'red', 'orange', 'yellow', 'green', 'c', 'deepskyblue', 'blue', 'darkviolet', 'deeppink', 'pink']
+#     p_dct = {'50w': '500000', '50w29': '500150-29', '50w39': '500200-39', '50w49': '500250-49', '50w59': '500300-59',
+#              '50w69': '500350-69', '50w79': '500400-79', '50w89': '500450-89', '50w99': '500500-99',
+#              '50w109': '500550-109', '50w119': '500600-119'}
+#     c_i = -1
+#     for k, v in p_dct.items():
+#         k_pkl = pkl_pkg + k + '_office_aurora_asian_finetune_avg_k.pkl'
+#         u_pkl = pkl_pkg + k + '_office_aurora_asian_finetune_avg_uk.pkl'
+#         fpr, tpr, threshold = insight_c.verify_db(k_pkl, u_pkl, print_flag=0)
+#
+#         roc_auc = auc(fpr, tpr)  # 计算auc的值
+#         c_i += 1
+#         plt.plot(fpr, tpr, color=colors[c_i],
+#                  lw=lw, label=k + ': AUC' + str(np.round(roc_auc, 4)))  # 假正率为横坐标，真正率为纵坐标做曲线
+#     plt.plot([0, 1], [0, 1.01], color='navy', lw=lw, linestyle='--')
+#     plt.plot([0.1, 0.1], [0, 1.01], color='gray', linestyle='-.')
+#     plt.plot([0.01, 0.01], [0, 1.01], color='gray', linestyle='-.')
+#     plt.plot([0.001, 0.001], [0, 1.01], color='gray', linestyle='-.')
+#     plt.xlim([0.0, 0.5])
+#     plt.ylim([0, 1.01])
+#     y_ticks = np.arange(0, 1.01, 0.01)
+#     plt.yticks(y_ticks)
+#     plt.grid(linestyle='-.', axis='y', which='major')
+#     plt.xlabel('False Positive Rate')
+#     plt.ylabel('True Positive Rate')
+#     plt.title('ROC Curve @IDcard1315P')
+#     plt.legend(loc="upper right")
+#     plt.subplots_adjust(top=0.98, bottom=0.02, right=0.98, left=0.07, hspace=2, wspace=2)
+#     plt.margins(0.03, 0.03)
+#     plt.savefig(roc_fig)
